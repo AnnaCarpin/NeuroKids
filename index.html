@@ -1,0 +1,1836 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>LYF - Learning Your Feelings</title>
+    <script src="https://kit.fontawesome.com/a076d05399.js" crossorigin="anonymous"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.5.1/dist/confetti.browser.min.js"></script>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Arial', sans-serif;
+            background: #f5e8e8;
+            min-height: 100vh;
+            color: #333;
+            overflow-x: hidden;
+        }
+
+        /* Layout principal */
+        .main-layout {
+            display: flex;
+            min-height: 100vh;
+        }
+
+        /* Sidebar esquerda */
+        .sidebar {
+            width: 140px;
+            background: linear-gradient(135deg, #7db5c5, #5a9eb0);
+            position: relative;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+        }
+
+        .sidebar::before {
+            content: '';
+            position: absolute;
+            top: -50px;
+            right: -30px;
+            width: 100px;
+            height: 100px;
+            background: rgba(255, 192, 203, 0.6);
+            border-radius: 50%;
+            z-index: 1;
+        }
+
+        .sidebar::after {
+            content: '';
+            position: absolute;
+            bottom: 50px;
+            left: -20px;
+            width: 80px;
+            height: 120px;
+            background: rgba(255, 204, 102, 0.7);
+            border-radius: 50%;
+            z-index: 1;
+        }
+
+        .logo-section {
+            padding: 20px 15px;
+            text-align: center;
+            position: relative;
+            z-index: 10;
+        }
+
+        .logo {
+            background: rgba(255, 255, 255, 0.9);
+            border-radius: 15px;
+            padding: 15px 10px;
+            margin-bottom: 20px;
+        }
+
+        .logo h1 {
+            font-size: 2.5rem;
+            font-weight: bold;
+            color: #7db5c5;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.1);
+            line-height: 1;
+        }
+
+        .menu-vertical {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+            padding: 0 15px;
+            position: relative;
+            z-index: 10;
+        }
+
+        .menu-item {
+            background: rgba(255, 255, 255, 0.8);
+            color: #666;
+            border: none;
+            padding: 12px 8px;
+            border-radius: 8px;
+            font-weight: bold;
+            font-size: 11px;
+            text-transform: uppercase;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            text-align: center;
+            letter-spacing: 0.5px;
+        }
+
+        .menu-item:hover,
+        .menu-item.active {
+            background: rgba(255, 255, 255, 1);
+            transform: translateX(5px);
+            box-shadow: 0 3px 10px rgba(0,0,0,0.1);
+        }
+
+        .hamburger-menu {
+            position: absolute;
+            bottom: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: rgba(255, 255, 255, 0.8);
+            border: none;
+            width: 40px;
+            height: 40px;
+            border-radius: 8px;
+            cursor: pointer;
+            z-index: 10;
+        }
+
+        .hamburger-menu::before,
+        .hamburger-menu::after,
+        .hamburger-menu span {
+            content: '';
+            display: block;
+            width: 20px;
+            height: 2px;
+            background: #666;
+            margin: 4px auto;
+            border-radius: 1px;
+        }
+
+        .main-content {
+            flex: 1;
+            padding: 40px;
+            position: relative;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .main-text {
+            max-width: 400px;
+            margin-bottom: 40px;
+        }
+
+        .main-text h2 {
+            color: #7db5c5;
+            font-size: 1.2rem;
+            line-height: 1.4;
+            font-weight: normal;
+            margin-bottom: 30px;
+        }
+
+        .brain-buttons {
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+            max-width: 400px;
+        }
+
+        .brain-btn {
+            padding: 12px 30px;
+            border: none;
+            border-radius: 25px;
+            color: white;
+            font-weight: bold;
+            font-size: 16px;
+            text-transform: uppercase;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            letter-spacing: 1px;
+            box-shadow: 0 3px 10px rgba(0,0,0,0.1);
+        }
+
+        .brain-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(0,0,0,0.2);
+        }
+
+        .brain-btn.parietal {
+            background: linear-gradient(135deg, #a8c8e1, #7db5c5);
+        }
+
+        .brain-btn.occipital {
+            background: linear-gradient(135deg, #f2a5a5, #e88888);
+        }
+
+        .brain-btn.temporal {
+            background: linear-gradient(135deg, #a8d5c1, #7db59a);
+        }
+
+        .brain-btn.frontal {
+            background: linear-gradient(135deg, #f5d76e, #e6c455);
+        }
+
+        .brain-btn.cerebelo {
+            background: linear-gradient(135deg, #c4a8d1, #b394c4);
+        }
+
+        .flashcard-area {
+             position: absolute;
+    top: 120px;   /* abaixa mais perto dos botões */
+    right: 100px; /* ajusta a posição lateral */
+    width: 520px; /* aumenta largura */
+    height: 380px; /* aumenta altura */
+            background: #7db5c5;
+            border-radius: 20px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            box-shadow: 0 10px 25px rgba(0,0,0,0.1);
+        }
+
+        .flashcard {
+            width: 90%;
+            height: 90%;
+            background: white;
+            border-radius: 15px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: #666;
+            font-size: 18px;
+            text-align: center;
+            padding: 20px;
+            cursor: pointer;
+            transition: transform 0.3s ease;
+        }
+
+        .flashcard:hover {
+            transform: scale(1.02);
+        }
+
+        .flashcard img {
+            max-width: 100%;
+            max-height: 100%;
+            object-fit: contain;
+        }
+
+        .flip-btn {
+             position: relative;   /* em vez de absolute */
+    margin-top: 20px;     /* espaço abaixo do flashcard */
+    right: auto;
+    top: auto;
+    display: block;
+            background: #7db5c5;
+            color: white;
+            border: none;
+            padding: 18px 40px;   /* aumenta largura/altura */
+            font-size: 18px; 
+            border-radius: 25px;
+            font-weight: bold;
+            text-transform: uppercase;
+            cursor: pointer;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+            transition: all 0.3s ease;
+        }
+
+        .flip-btn:hover {
+            background: #6a9fb0;
+            transform: translateY(-2px);
+        }
+
+        .brain-character {
+            position: absolute;
+            bottom: 20px;
+            right: 40px;
+            width: 80px;
+            height: 80px;
+            z-index: 10;
+        }
+
+        .brain-mascot {
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(135deg, #ff9db4, #ff6b9d);
+            border-radius: 50% 50% 45% 45%;
+            position: relative;
+            animation: float 3s ease-in-out infinite;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.2);
+        }
+
+        .brain-mascot::before,
+        .brain-mascot::after {
+            content: '';
+            position: absolute;
+            width: 8px;
+            height: 8px;
+            background: #333;
+            border-radius: 50%;
+            top: 25px;
+        }
+
+        .brain-mascot::before {
+            left: 22px;
+        }
+
+        .brain-mascot::after {
+            right: 22px;
+        }
+
+        .brain-smile {
+            position: absolute;
+            bottom: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 20px;
+            height: 10px;
+            border: 2px solid #333;
+            border-top: none;
+            border-radius: 0 0 20px 20px;
+        }
+
+        .tagline {
+            position: absolute;
+            bottom: 10px;
+            right: 130px;
+            color: #7db5c5;
+            font-weight: bold;
+            font-size: 14px;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        @keyframes float {
+            0%, 100% { transform: translateY(0px); }
+            50% { transform: translateY(-10px); }
+        }
+
+        .quiz-page {
+            padding: 40px;
+        }
+
+        .quiz-header {
+            text-align: center;
+            margin-bottom: 40px;
+        }
+
+        .quiz-title {
+            color: #7db5c5;
+            font-size: 2.5rem;
+            margin-bottom: 20px;
+        }
+
+        .progress-container {
+            background: rgba(125, 181, 197, 0.2);
+            border-radius: 25px;
+            height: 15px;
+            margin: 30px 0;
+            overflow: hidden;
+        }
+
+        .progress-bar {
+            height: 100%;
+            background: linear-gradient(90deg, #7db5c5, #5a9eb0);
+            border-radius: 25px;
+            transition: width 0.5s ease;
+            width: 0%;
+        }
+
+        .question-card {
+            background: white;
+            border-radius: 20px;
+            padding: 40px;
+            margin: 30px 0;
+            box-shadow: 0 10px 25px rgba(0,0,0,0.1);
+        }
+
+        .question-card h3 {
+            font-size: 1.5rem;
+            color: #333;
+            margin-bottom: 25px;
+        }
+
+        .options {
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+        }
+
+        .option {
+            background: #f8f9fa;
+            border: 2px solid transparent;
+            border-radius: 12px;
+            padding: 15px 20px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            display: flex;
+            align-items: center;
+        }
+
+        .option:hover {
+            background: rgba(125, 181, 197, 0.1);
+            border-color: #7db5c5;
+        }
+
+        .option input {
+            margin-right: 15px;
+            transform: scale(1.2);
+        }
+
+        .quiz-btn {
+            background: linear-gradient(135deg, #7db5c5, #5a9eb0);
+            color: white;
+            border: none;
+            border-radius: 25px;
+            padding: 15px 30px;
+            font-size: 16px;
+            font-weight: bold;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            margin: 20px auto;
+            display: block;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        .quiz-btn:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 10px 25px rgba(125, 181, 197, 0.3);
+        }
+
+        .reset-btn {
+            background: linear-gradient(135deg, #f2a5a5, #e88888);
+            color: white;
+            border: none;
+            border-radius: 25px;
+            padding: 15px 30px;
+            font-size: 16px;
+            font-weight: bold;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            margin: 20px auto;
+            display: block;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        .reset-btn:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 10px 25px rgba(242, 165, 165, 0.3);
+            background: linear-gradient(135deg, #e88888, #d67777);
+        }
+
+        .reset-section {
+            background: rgba(242, 165, 165, 0.1);
+            border: 2px solid rgba(242, 165, 165, 0.3);
+            border-radius: 20px;
+            padding: 30px;
+            margin: 30px 0;
+            text-align: center;
+        }
+
+        .reset-section h3 {
+            color: #e88888;
+            margin-bottom: 15px;
+        }
+
+        .reset-section p {
+            color: #666;
+            margin-bottom: 20px;
+        }
+
+        .analysis-page {
+            padding: 40px;
+        }
+
+        .analysis-title {
+            color: #7db5c5;
+            font-size: 2.5rem;
+            text-align: center;
+            margin-bottom: 40px;
+        }
+
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 30px;
+            margin: 40px 0;
+        }
+
+        .stat-card {
+            background: white;
+            border-radius: 20px;
+            padding: 30px;
+            box-shadow: 0 10px 25px rgba(0,0,0,0.1);
+        }
+
+        .stat-card h3 {
+            color: #7db5c5;
+            margin-bottom: 20px;
+            text-align: center;
+        }
+
+        .chart-container {
+            position: relative;
+            height: 300px;
+        }
+
+        .ai-section {
+            background: linear-gradient(135deg, rgba(125, 181, 197, 0.1), rgba(90, 158, 176, 0.1));
+            border: 2px solid rgba(125, 181, 197, 0.3);
+            border-radius: 20px;
+            padding: 30px;
+            margin: 30px 0;
+        }
+
+        .ai-section h3 {
+            color: #7db5c5;
+            margin-bottom: 20px;
+        }
+
+        .ai-recommendation {
+            background: rgba(255,255,255,0.8);
+            border-radius: 12px;
+            padding: 20px;
+            margin: 15px 0;
+            color: #333;
+        }
+
+        .chatbot-page {
+            padding: 40px;
+            height: calc(100vh - 80px);
+            display: flex;
+            flex-direction: column;
+        }
+
+        .chatbot-header {
+            text-align: center;
+            margin-bottom: 30px;
+        }
+
+        .chatbot-title {
+            color: #7db5c5;
+            font-size: 2.5rem;
+            margin-bottom: 10px;
+        }
+
+        .chatbot-subtitle {
+            color: #666;
+            font-size: 1.1rem;
+        }
+
+        .chat-container {
+            flex: 1;
+            background: white;
+            border-radius: 20px;
+            box-shadow: 0 10px 25px rgba(0,0,0,0.1);
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+            max-height: 600px;
+        }
+
+        .chat-messages {
+            flex: 1;
+            padding: 30px;
+            overflow-y: auto;
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+        }
+
+        .chat-messages::-webkit-scrollbar {
+            width: 8px;
+        }
+
+        .chat-messages::-webkit-scrollbar-track {
+            background: #f1f1f1;
+            border-radius: 10px;
+        }
+
+        .chat-messages::-webkit-scrollbar-thumb {
+            background: #7db5c5;
+            border-radius: 10px;
+        }
+
+        .message {
+            display: flex;
+            gap: 15px;
+            animation: fadeInUp 0.3s ease;
+        }
+
+        .message.user {
+            flex-direction: row-reverse;
+        }
+
+        .message-avatar {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 20px;
+            flex-shrink: 0;
+        }
+
+        .message.bot .message-avatar {
+            background: linear-gradient(135deg, #ff9db4, #ff6b9d);
+            color: white;
+        }
+
+        .message.user .message-avatar {
+            background: linear-gradient(135deg, #7db5c5, #5a9eb0);
+            color: white;
+        }
+
+        .message-content {
+            max-width: 70%;
+            padding: 15px 20px;
+            border-radius: 15px;
+            line-height: 1.6;
+        }
+
+        .message.bot .message-content {
+            background: #f0f8ff;
+            border-bottom-left-radius: 5px;
+            color: #333;
+        }
+
+        .message.user .message-content {
+            background: linear-gradient(135deg, #7db5c5, #5a9eb0);
+            border-bottom-right-radius: 5px;
+            color: white;
+        }
+
+        .typing-indicator {
+            display: none;
+            padding: 15px 20px;
+            background: #f0f8ff;
+            border-radius: 15px;
+            border-bottom-left-radius: 5px;
+            max-width: 70px;
+        }
+
+        .typing-indicator.active {
+            display: block;
+        }
+
+        .typing-dots {
+            display: flex;
+            gap: 5px;
+        }
+
+        .typing-dots span {
+            width: 8px;
+            height: 8px;
+            background: #7db5c5;
+            border-radius: 50%;
+            animation: typing 1.4s infinite;
+        }
+
+        .typing-dots span:nth-child(2) {
+            animation-delay: 0.2s;
+        }
+
+        .typing-dots span:nth-child(3) {
+            animation-delay: 0.4s;
+        }
+
+        @keyframes typing {
+            0%, 60%, 100% {
+                transform: translateY(0);
+                opacity: 0.7;
+            }
+            30% {
+                transform: translateY(-10px);
+                opacity: 1;
+            }
+        }
+
+        .chat-input-container {
+            padding: 20px 30px;
+            background: #f8f9fa;
+            border-top: 1px solid #e9ecef;
+            display: flex;
+            gap: 15px;
+        }
+
+        .chat-input {
+            flex: 1;
+            padding: 12px 20px;
+            border: 2px solid #e9ecef;
+            border-radius: 25px;
+            font-size: 14px;
+            outline: none;
+            transition: all 0.3s ease;
+            font-family: Arial, sans-serif;
+        }
+
+        .chat-input:focus {
+            border-color: #7db5c5;
+            box-shadow: 0 0 0 3px rgba(125, 181, 197, 0.1);
+        }
+
+        .chat-send-btn {
+            background: linear-gradient(135deg, #7db5c5, #5a9eb0);
+            color: white;
+            border: none;
+            width: 45px;
+            height: 45px;
+            border-radius: 50%;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 18px;
+        }
+
+        .chat-send-btn:hover {
+            transform: scale(1.1);
+            box-shadow: 0 5px 15px rgba(125, 181, 197, 0.3);
+        }
+
+        .chat-send-btn:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+            transform: scale(1);
+        }
+
+        .suggestion-chips {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+            padding: 0 30px 20px;
+            background: #f8f9fa;
+        }
+
+        .suggestion-chip {
+            padding: 8px 16px;
+            background: white;
+            border: 1px solid #e9ecef;
+            border-radius: 20px;
+            font-size: 13px;
+            color: #666;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .suggestion-chip:hover {
+            background: #7db5c5;
+            color: white;
+            border-color: #7db5c5;
+            transform: translateY(-2px);
+        }
+
+        .page {
+            display: none;
+        }
+
+        .page.active {
+            display: block;
+        }
+
+        /* Responsividade */
+        @media (max-width: 1024px) {
+            .flashcard-area {
+                width: 250px;
+                height: 180px;
+            }
+            
+            .flip-btn {
+                top: 240px;
+            }
+            
+            .main-text {
+                max-width: 350px;
+            }
+        }
+
+        @media (max-width: 768px) {
+            .main-layout {
+                flex-direction: column;
+            }
+            
+            .sidebar {
+                width: 100%;
+                height: auto;
+                flex-direction: row;
+                padding: 10px;
+                align-items: center;
+                justify-content: space-between;
+            }
+            
+            .sidebar::before,
+            .sidebar::after {
+                display: none;
+            }
+            
+            .logo-section {
+                padding: 10px;
+                margin: 0;
+            }
+            
+            .logo {
+                margin-bottom: 0;
+                padding: 10px;
+            }
+            
+            .logo h1 {
+                font-size: 1.8rem;
+            }
+            
+            .menu-vertical {
+                flex-direction: row;
+                gap: 5px;
+                flex-wrap: wrap;
+                flex: 1;
+                padding: 0 10px;
+            }
+            
+            .menu-item {
+                font-size: 10px;
+                padding: 10px 12px;
+            }
+            
+            .menu-item:hover,
+            .menu-item.active {
+                transform: translateY(-2px);
+            }
+            
+            .hamburger-menu {
+                position: static;
+                transform: none;
+                margin-left: 10px;
+            }
+            
+            .main-content {
+                padding: 20px;
+            }
+            
+            .main-text {
+                max-width: 100%;
+                margin-bottom: 30px;
+            }
+            
+            .main-text h2 {
+                font-size: 1rem;
+            }
+            
+            .brain-buttons {
+                max-width: 100%;
+                gap: 12px;
+            }
+            
+            .brain-btn {
+                font-size: 14px;
+                padding: 10px 20px;
+            }
+            
+            .flashcard-area {
+                position: static;
+                margin: 30px auto 20px;
+                width: 100%;
+                max-width: 300px;
+                height: 200px;
+            }
+            
+            .flip-btn {
+                position: static;
+                margin: 20px auto;
+                display: block;
+            }
+            
+            .brain-character {
+                position: static;
+                margin: 30px auto 20px;
+                width: 70px;
+                height: 70px;
+            }
+            
+            .tagline {
+                position: static;
+                text-align: center;
+                margin: 20px 0;
+                font-size: 12px;
+            }
+            
+            .quiz-page,
+            .analysis-page,
+            .chatbot-page {
+                padding: 20px;
+            }
+            
+            .quiz-title,
+            .analysis-title,
+            .chatbot-title {
+                font-size: 1.8rem;
+            }
+            
+            .question-card {
+                padding: 25px;
+            }
+            
+            .stats-grid {
+                grid-template-columns: 1fr;
+                gap: 20px;
+            }
+            
+            .chat-container {
+                max-height: 500px;
+            }
+            
+            .message-content {
+                max-width: 85%;
+            }
+            
+            .suggestion-chips {
+                padding: 0 20px 15px;
+            }
+        }
+
+        @media (max-width: 480px) {
+            .logo h1 {
+                font-size: 1.5rem;
+            }
+            
+            .menu-item {
+                font-size: 9px;
+                padding: 8px 10px;
+            }
+            
+            .brain-btn {
+                font-size: 13px;
+            }
+            
+            .flashcard-area {
+                height: 180px;
+            }
+            
+            .quiz-title,
+            .analysis-title,
+            .chatbot-title {
+                font-size: 1.5rem;
+            }
+            
+            .question-card h3 {
+                font-size: 1.2rem;
+            }
+            
+            .chat-input-container {
+                padding: 15px 20px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="main-layout">
+        <div class="sidebar">
+            <div class="logo-section">
+                <div class="logo">
+                    <h1>LYF</h1>
+                </div>
+            </div>
+            
+            <div class="menu-vertical">
+                <button class="menu-item active" data-page="home">Flash Card</button>
+                <button class="menu-item" data-page="flashcards">Quiz</button>
+                <button class="menu-item" data-page="chatbot">Chat Bot</button>
+                <button class="menu-item" data-page="analysis">Análise</button>
+            </div>
+            
+            <button class="hamburger-menu">
+                <span></span>
+            </button>
+        </div>
+
+        <div class="main-content">
+            <div class="page active" id="home">
+                <div class="main-text">
+                    <h2>Vamos aprender sobre os lóbulos! Clique em VIRAR para ver o verso. Clique na imagem para o próximo card!</h2>
+                </div>
+
+                <div class="brain-buttons">
+                    <button class="brain-btn parietal" data-region="parietal">PARIETAL</button>
+                    <button class="brain-btn occipital" data-region="occipital">OCCIPITAL</button>
+                    <button class="brain-btn temporal" data-region="temporal">TEMPORAL</button>
+                    <button class="brain-btn frontal" data-region="frontal">FRONTAL</button>
+                    <button class="brain-btn cerebelo" data-region="cerebelo">CEREBELO</button>
+                </div>
+
+                <div class="flashcard-area">
+                    <div class="flashcard" id="flashcard">
+                        <img id="card-image" src="data:image/svg+xml,%3Csvg width='260' height='160' xmlns='http://www.w3.org/2000/svg'%3E%3Crect width='100%25' height='100%25' fill='%23f0f8ff'/%3E%3Ctext x='50%25' y='50%25' text-anchor='middle' dy='0.35em' fill='%23666' font-size='16' font-family='Arial'%3ESelecione uma região cerebral%3C/text%3E%3C/svg%3E" alt="Flashcard">
+                    </div>
+                </div>
+
+                <button class="flip-btn" id="flip-btn">VIRAR</button>
+
+                <div class="brain-character">
+                    <div class="brain-mascot">
+                        <div class="brain-smile"></div>
+                    </div>
+                </div>
+
+                <div class="tagline">LEARNING YOUR FEELINGS</div>
+            </div>
+
+            <div class="page" id="flashcards">
+                <div class="quiz-page">
+                    <div class="quiz-header">
+                        <h1 class="quiz-title">Quiz Inteligente</h1>
+                        <p style="color: #7db5c5; font-size: 1.2rem;">Teste seus conhecimentos sobre os lóbulos cerebrais!</p>
+                    </div>
+                    
+                    <div class="progress-container">
+                        <div class="progress-bar" id="progress-bar"></div>
+                    </div>
+                    
+                    <div id="quiz-container">
+                        <div class="question-card">
+                            <h3>Carregando questão...</h3>
+                        </div>
+                    </div>
+                    
+                    <button class="quiz-btn" id="submit-answer">Responder</button>
+                </div>
+            </div>
+
+            <div class="page" id="chatbot">
+                <div class="chatbot-page">
+                    <div class="chatbot-header">
+                        <h1 class="chatbot-title">Chat Bot - Assistente Cerebral</h1>
+                        <p class="chatbot-subtitle">Faça perguntas sobre os lóbulos cerebrais, lesões e doenças!</p>
+                    </div>
+                    
+                    <div class="chat-container">
+                        <div class="chat-messages" id="chat-messages">
+                            <div class="message bot">
+                                <div class="message-avatar">🧠</div>
+                                <div class="message-content">
+                                    Olá! Eu sou o Neuro, seu assistente sobre cérebro! Posso responder sobre lóbulos cerebrais, lesões, doenças neurológicas e muito mais. Como posso te ajudar hoje?
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="suggestion-chips" id="suggestion-chips">
+                            <div class="suggestion-chip" data-question="O que é o lobo frontal?">O que é o lobo frontal?</div>
+                            <div class="suggestion-chip" data-question="O que acontece se lesionar o cerebelo?">Lesões no cerebelo</div>
+                            <div class="suggestion-chip" data-question="O que é Alzheimer?">O que é Alzheimer?</div>
+                            <div class="suggestion-chip" data-question="O que é epilepsia?">O que é epilepsia?</div>
+                        </div>
+                        
+                        <div class="chat-input-container">
+                            <input type="text" 
+                                   class="chat-input" 
+                                   id="chat-input" 
+                                   placeholder="Digite sua pergunta sobre o cérebro..."
+                                   autocomplete="off">
+                            <button class="chat-send-btn" id="chat-send-btn">
+                                ➤
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="page" id="analysis">
+                <div class="analysis-page">
+                    <h1 class="analysis-title">Análise de Desempenho</h1>
+                    
+                    <div class="stats-grid">
+                        <div class="stat-card">
+                            <h3>Desempenho Geral</h3>
+                            <div class="chart-container">
+                                <canvas id="performance-chart"></canvas>
+                            </div>
+                        </div>
+                        
+                        <div class="stat-card">
+                            <h3>Acertos por Nível</h3>
+                            <div class="chart-container">
+                                <canvas id="level-chart"></canvas>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="ai-section">
+                        <h3>🧠 Análise de IA</h3>
+                        <div id="ai-analysis">
+                            <div class="ai-recommendation">
+                                <strong>Recomendação Personalizada:</strong>
+                                <p id="ai-recommendation-text">Analisando seu desempenho...</p>
+                            </div>
+                            <div class="ai-recommendation">
+                                <strong>Padrão de Aprendizagem:</strong>
+                                <p id="learning-pattern">Identificando padrões...</p>
+                            </div>
+                            <div class="ai-recommendation">
+                                <strong>Próximos Passos:</strong>
+                                <p id="next-steps">Gerando plano personalizado...</p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="stat-card" style="margin-top: 30px;">
+                        <h3>Relatório do Professor</h3>
+                        <div id="teacher-report">
+                            <p><strong>Tempo total de estudo:</strong> <span id="study-time">0 segundos</span></p>
+                            <p><strong>Acertos:</strong> <span id="correct-answers">0/6</span></p>
+                            <p><strong>Nível do aluno:</strong> <span id="student-level">Avaliando...</span></p>
+                            <div id="recommendations"></div>
+                        </div>
+                    </div>
+
+                    <div class="reset-section">
+                        <h3>🔄 Reiniciar Quiz</h3>
+                        <p>Quer fazer o quiz novamente ou permitir que outra pessoa teste seus conhecimentos?</p>
+                        <button class="reset-btn" id="reset-btn">Reiniciar Tudo</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        class LYFApp {
+            constructor() {
+                this.currentPage = 'home';
+                this.currentRegion = 'parietal';
+                this.currentQuestionIndex = 0;
+                this.correctAnswers = 0;
+                this.startTime = Date.now();
+                this.studyTime = 0;
+                this.levelStats = { leve: 0, medio: 0, dificil: 0 };
+                this.isFlipped = false;
+                this.performanceChart = null;
+                this.levelChart = null;
+                
+                // Índices para controlar os flashcards de cada região
+                this.currentIndex = {
+                    parietal: 0,
+                    occipital: 0,
+                    temporal: 0,
+                    frontal: 0,
+                    cerebelo: 0
+                };
+
+                // 5 flashcards para cada região (você pode substituir pelas suas imagens)
+                this.flashcardSets = {
+                    frontal: [
+                        { front: "./img/carta1.png", back: "./img/carta2.png" },
+                        { front: "./img/carta3.png", back: "./img/carta4.png" },
+                        { front: "./img/carta5.png", back: "./img/carta6.png" },
+                        ],
+                    occipital: [
+                        { front: "./img/carta7.png", back: "./img/carta8.png" },
+                        { front: "./img/carta9.png", back: "./img/carta10.png" },
+                        { front: "./img/carta11.png", back: "./img/carta12.png" },
+                        ],
+                    temporal: [
+                        { front: "./img/carta13.png", back: "./img/carta14.png" },
+                        { front: "./img/carta15.png", back: "./img/carta16.png" },
+                        { front: "./img/carta17.png", back: "./img/carta18.png" },
+                         ],
+                    cerebelo: [
+                        { front: "./img/carta19.png", back: "./img/carta20.png" },
+                        { front: "./img/carta21.png", back: "./img/carta22.png" },
+                        ],
+                    parietal: [
+                        { front: "./img/carta23.png", back: "./img/carta24.png" },
+                        { front: "./img/carta25.png", back: "./img/carta26.png" },
+                        { front: "./img/carta27.png", back: "./img/carta28.png" },
+                        { front: "./img/carta29.png", back: "./img/carta30.png" },
+                      ]
+                };
+
+                // Base de conhecimento expandida do chatbot
+                this.brainKnowledge = {
+                    'lobo frontal': {
+                        keywords: ['frontal', 'emoção', 'emoções', 'personalidade', 'planejamento', 'decisão', 'decisões', 'pensamento', 'comportamento'],
+                        response: 'O lobo frontal é responsável pelo controle das emoções, personalidade, planejamento e tomada de decisões. Ele também controla movimentos voluntários e a fala através da área de Broca. É a parte mais desenvolvida do cérebro humano!'
+                    },
+                    'lesão frontal': {
+                        keywords: ['lesão frontal', 'lesionar frontal', 'dano frontal', 'machuca frontal', 'prejudica frontal'],
+                        response: 'Se o lobo frontal for lesionado, a pessoa pode ter mudanças na personalidade, dificuldade em planejar coisas, controlar impulsos ou tomar decisões. Também pode afetar a capacidade de falar ou se mover.'
+                    },
+                    'lobo parietal': {
+                        keywords: ['parietal', 'tato', 'sensação', 'sensações', 'toque', 'temperatura', 'dor', 'espacial', 'orientação'],
+                        response: 'O lobo parietal processa informações sensoriais como tato, temperatura, pressão e dor. Também é responsável pela orientação espacial, ajudando você a se localizar no espaço e entender posições dos objetos ao seu redor.'
+                    },
+                    'lesão parietal': {
+                        keywords: ['lesão parietal', 'lesionar parietal', 'dano parietal', 'machuca parietal'],
+                        response: 'Lesões no lobo parietal podem causar dificuldade em sentir o toque, temperatura ou dor. A pessoa também pode ter problemas para se orientar no espaço, não conseguir reconhecer partes do próprio corpo ou ter dificuldade em fazer cálculos matemáticos.'
+                    },
+                    'lobo temporal': {
+                        keywords: ['temporal', 'audição', 'som', 'sons', 'ouvir', 'memória', 'memórias', 'linguagem', 'lembranças'],
+                        response: 'O lobo temporal é essencial para a audição, processamento de sons e linguagem. Também guarda memórias de longo prazo através do hipocampo. A área de Wernicke, localizada aqui, nos ajuda a compreender a linguagem falada e escrita.'
+                    },
+                    'lesão temporal': {
+                        keywords: ['lesão temporal', 'lesionar temporal', 'dano temporal', 'machuca temporal'],
+                        response: 'Danos no lobo temporal podem causar dificuldade para entender o que as pessoas falam, problemas de memória (esquecimento), dificuldade para reconhecer rostos ou sons, e até mesmo convulsões (epilepsia).'
+                    },
+                    'lobo occipital': {
+                        keywords: ['occipital', 'visão', 'ver', 'visual', 'cores', 'formas', 'enxergar', 'olhos'],
+                        response: 'O lobo occipital é o centro do processamento visual! Ele interpreta tudo que você vê: cores, formas, movimentos e distâncias. Recebe informações dos olhos e transforma em imagens que você consegue reconhecer e entender.'
+                    },
+                    'lesão occipital': {
+                        keywords: ['lesão occipital', 'lesionar occipital', 'dano occipital', 'machuca occipital', 'cegueira cortical'],
+                        response: 'Lesões no lobo occipital podem causar cegueira parcial ou total (mesmo com os olhos funcionando!), dificuldade para reconhecer cores, formas ou movimentos. A pessoa pode ver manchas ou ter dificuldade para identificar o que está vendo.'
+                    },
+                    'cerebelo': {
+                        keywords: ['cerebelo', 'equilíbrio', 'coordenação', 'movimento', 'movimentos', 'motor', 'postura', 'andar'],
+                        response: 'O cerebelo controla o equilíbrio, coordenação motora e postura. Ele ajuda você a realizar movimentos precisos e suaves, como pegar um copo sem derramar água ou andar sem cair. Também está envolvido no aprendizado motor!'
+                    },
+                    'lesão cerebelo': {
+                        keywords: ['lesão cerebelo', 'lesionar cerebelo', 'dano cerebelo', 'machuca cerebelo'],
+                        response: 'Lesões no cerebelo causam problemas de equilíbrio (a pessoa pode cair facilmente), movimentos descoordenados e tremores. Fica difícil fazer movimentos precisos como escrever, comer ou abotoar roupas. A fala também pode ficar arrastada.'
+                    },
+                    'alzheimer': {
+                        keywords: ['alzheimer', 'alzheimer', 'esquecimento', 'esquecer'],
+                        response: 'Alzheimer é uma doença que afeta principalmente a memória. Começa no hipocampo (dentro do lobo temporal) e se espalha. A pessoa vai esquecendo coisas recentes, depois antigas, e pode ficar confusa. É mais comum em idosos.'
+                    },
+                    'parkinson': {
+                        keywords: ['parkinson', 'tremor', 'tremores'],
+                        response: 'Parkinson é uma doença que afeta os movimentos. Causa tremores (principalmente nas mãos), dificuldade para começar a se mover, rigidez muscular e problemas de equilíbrio. Acontece quando neurônios que produzem dopamina são danificados.'
+                    },
+                    'epilepsia': {
+                        keywords: ['epilepsia', 'convulsão', 'convulsões', 'ataque'],
+                        response: 'Epilepsia é quando o cérebro tem "tempestades elétricas" que causam convulsões. Pode começar em qualquer lobo cerebral. Durante uma crise, a pessoa pode ter movimentos involuntários, perder consciência ou ter sensações estranhas.'
+                    },
+                    'tdah': {
+                        keywords: ['tdah', 'hiperatividade', 'déficit de atenção', 'desatenção', 'hiperativo'],
+                        response: 'TDAH (Déficit de Atenção e Hiperatividade) afeta principalmente o lobo frontal. Causa dificuldade para prestar atenção, controlar impulsos e ficar parado. A pessoa pode ser muito distraída, esquecer coisas ou ser muito agitada.'
+                    },
+                    'avc': {
+                        keywords: ['avc', 'derrame', 'acidente vascular'],
+                        response: 'AVC (Acidente Vascular Cerebral) ou derrame acontece quando o sangue não chega a uma parte do cérebro. Isso pode matar neurônios rapidamente. Os sintomas dependem da área afetada: pode causar paralisia, dificuldade para falar, problemas de visão ou memória.'
+                    },
+                    'autismo': {
+                        keywords: ['autismo', 'tea', 'autista'],
+                        response: 'Autismo (TEA) afeta várias áreas do cérebro, especialmente as conexões entre neurônios. Causa dificuldades na comunicação social, comportamentos repetitivos e sensibilidade sensorial (alguns sons, luzes ou texturas podem incomodar muito).'
+                    },
+                    'geral': {
+                        keywords: ['cérebro', 'neurônio', 'neurônios', 'sinapse', 'sistema nervoso', 'funciona', 'função', 'funções'],
+                        response: 'O cérebro humano tem cerca de 86 bilhões de neurônios que se comunicam através de sinapses! Ele é dividido em lobos que trabalham juntos: frontal (pensamento), parietal (sensações), temporal (audição/memória), occipital (visão) e cerebelo (equilíbrio).'
+                    }
+                };
+
+                this.questions = [
+                    {
+                        question: "Qual lobo cerebral é responsável pelo controle das emoções e personalidade?",
+                        options: ["Lobo Frontal", "Lobo Parietal", "Lobo Temporal"],
+                        correct: 0,
+                        level: "leve"
+                    },
+                    {
+                        question: "Que parte do cérebro processa as sensações do toque?",
+                        options: ["Cerebelo", "Lobo Parietal", "Lobo Occipital"],
+                        correct: 1,
+                        level: "leve"
+                    },
+                    {
+                        question: "O lobo temporal é principalmente responsável por:",
+                        options: ["Visão", "Audição e memória", "Movimento"],
+                        correct: 1,
+                        level: "medio"
+                    },
+                    {
+                        question: "Qual estrutura cerebral ajuda no equilíbrio e coordenação?",
+                        options: ["Cerebelo", "Lobo Frontal", "Lobo Occipital"],
+                        correct: 0,
+                        level: "medio"
+                    },
+                    {
+                        question: "A área de Broca, responsável pela produção da fala, está localizada no:",
+                        options: ["Lobo Temporal", "Lobo Frontal", "Lobo Parietal"],
+                        correct: 1,
+                        level: "dificil"
+                    },
+                    {
+                        question: "Qual lobo processa principalmente informações visuais?",
+                        options: ["Lobo Occipital", "Lobo Temporal", "Lobo Parietal"],
+                        correct: 0,
+                        level: "leve"
+                    }
+                ];
+
+                this.initializeApp();
+            }
+
+            initializeApp() {
+                this.setupEventListeners();
+                this.startStudyTimer();
+                this.updateFlashcard();
+            }
+
+            setupEventListeners() {
+                document.querySelectorAll('[data-page]').forEach(element => {
+                    element.addEventListener('click', (e) => {
+                        e.preventDefault();
+                        const page = element.getAttribute('data-page');
+                        this.navigateToPage(page);
+                    });
+                });
+
+                document.querySelectorAll('.brain-btn').forEach(btn => {
+                    btn.addEventListener('click', () => {
+                        this.selectRegion(btn.getAttribute('data-region'));
+                    });
+                });
+
+                const flipBtn = document.getElementById('flip-btn');
+                if (flipBtn) {
+                    flipBtn.addEventListener('click', () => {
+                        this.flipCard();
+                    });
+                }
+
+                // Clique na imagem avança para o próximo flashcard
+                const flashcard = document.getElementById('flashcard');
+                if (flashcard) {
+                    flashcard.addEventListener('click', () => {
+                        this.nextCard();
+                    });
+                }
+
+                const submitBtn = document.getElementById('submit-answer');
+                if (submitBtn) {
+                    submitBtn.addEventListener('click', () => {
+                        this.submitAnswer();
+                    });
+                }
+
+                const chatSendBtn = document.getElementById('chat-send-btn');
+                if (chatSendBtn) {
+                    chatSendBtn.addEventListener('click', () => {
+                        this.sendChatMessage();
+                    });
+                }
+
+                const chatInput = document.getElementById('chat-input');
+                if (chatInput) {
+                    chatInput.addEventListener('keypress', (e) => {
+                        if (e.key === 'Enter') {
+                            this.sendChatMessage();
+                        }
+                    });
+                }
+
+                document.querySelectorAll('.suggestion-chip').forEach(chip => {
+                    chip.addEventListener('click', () => {
+                        const question = chip.getAttribute('data-question');
+                        const input = document.getElementById('chat-input');
+                        if (input) {
+                            input.value = question;
+                            this.sendChatMessage();
+                        }
+                    });
+                });
+
+                const resetBtn = document.getElementById('reset-btn');
+                if (resetBtn) {
+                    resetBtn.addEventListener('click', () => {
+                        this.resetQuiz();
+                    });
+                }
+            }
+
+            startStudyTimer() {
+                this.startTime = Date.now();
+            }
+
+            navigateToPage(page) {
+                document.querySelectorAll('.page').forEach(p => {
+                    p.classList.remove('active');
+                });
+
+                const targetPage = document.getElementById(page);
+                if (targetPage) {
+                    targetPage.classList.add('active');
+                }
+                this.currentPage = page;
+
+                document.querySelectorAll('.menu-item').forEach(item => {
+                    item.classList.remove('active');
+                });
+                const activeMenuItem = document.querySelector(`[data-page="${page}"]`);
+                if (activeMenuItem) {
+                    activeMenuItem.classList.add('active');
+                }
+
+                if (page === 'flashcards') {
+                    this.initializeQuiz();
+                } else if (page === 'analysis') {
+                    this.generateAnalysis();
+                }
+            }
+
+            selectRegion(region) {
+                this.currentRegion = region;
+                this.isFlipped = false;
+                this.updateFlashcard();
+                
+                document.querySelectorAll('.brain-btn').forEach(btn => {
+                    btn.style.opacity = '0.7';
+                });
+                document.querySelector(`[data-region="${region}"]`).style.opacity = '1';
+            }
+
+            updateFlashcard() {
+                const cards = this.flashcardSets[this.currentRegion];
+                if (!cards || cards.length === 0) return;
+                
+                const currentIdx = this.currentIndex[this.currentRegion];
+                const card = cards[currentIdx];
+                const img = document.getElementById('card-image');
+                
+                if (this.isFlipped) {
+                    img.src = card.back;
+                } else {
+                    img.src = card.front;
+                }
+            }
+
+            // Botão VIRAR - alterna frente/verso do card atual
+            flipCard() {
+                this.isFlipped = !this.isFlipped;
+                this.updateFlashcard();
+            }
+
+            // Clique na imagem - avança para próximo card
+            nextCard() {
+                const cards = this.flashcardSets[this.currentRegion];
+                if (!cards || cards.length === 0) return;
+                
+                // Avança o índice (cíclico)
+                this.currentIndex[this.currentRegion] = (this.currentIndex[this.currentRegion] + 1) % cards.length;
+                
+                // Volta para frente do novo card
+                this.isFlipped = false;
+                this.updateFlashcard();
+            }
+
+            initializeQuiz() {
+                this.currentQuestionIndex = 0;
+                this.correctAnswers = 0;
+                this.levelStats = { leve: 0, medio: 0, dificil: 0 };
+                this.showQuestion();
+            }
+
+            showQuestion() {
+                const question = this.questions[this.currentQuestionIndex];
+                const container = document.getElementById('quiz-container');
+                
+                container.innerHTML = `
+                    <div class="question-card">
+                        <h3>Questão ${this.currentQuestionIndex + 1} de ${this.questions.length}</h3>
+                        <p style="margin-bottom: 25px; font-size: 1.2rem;">${question.question}</p>
+                        <div class="options">
+                            ${question.options.map((option, index) => `
+                                <div class="option">
+                                    <input type="radio" id="option${index}" name="answer" value="${index}">
+                                    <label for="option${index}">${option}</label>
+                                </div>
+                            `).join('')}
+                        </div>
+                    </div>
+                `;
+
+                const progress = ((this.currentQuestionIndex + 1) / this.questions.length) * 100;
+                document.getElementById('progress-bar').style.width = `${progress}%`;
+            }
+
+            submitAnswer() {
+                const selectedAnswer = document.querySelector('input[name="answer"]:checked');
+                
+                if (!selectedAnswer) {
+                    alert('Por favor, selecione uma resposta!');
+                    return;
+                }
+
+                const question = this.questions[this.currentQuestionIndex];
+                const answerValue = parseInt(selectedAnswer.value);
+
+                if (answerValue === question.correct) {
+                    this.correctAnswers++;
+                    this.levelStats[question.level]++;
+                    
+                    selectedAnswer.parentElement.style.background = '#c8e6c9';
+                    selectedAnswer.parentElement.style.borderColor = '#4caf50';
+                } else {
+                    selectedAnswer.parentElement.style.background = '#ffcdd2';
+                    selectedAnswer.parentElement.style.borderColor = '#f44336';
+                    
+                    const correctOption = document.querySelector(`input[name="answer"][value="${question.correct}"]`);
+                    correctOption.parentElement.style.background = '#c8e6c9';
+                    correctOption.parentElement.style.borderColor = '#4caf50';
+                }
+
+                setTimeout(() => {
+                    this.currentQuestionIndex++;
+                    
+                    if (this.currentQuestionIndex < this.questions.length) {
+                        this.showQuestion();
+                    } else {
+                        this.finishQuiz();
+                    }
+                }, 1500);
+            }
+
+            finishQuiz() {
+                this.studyTime = Math.round((Date.now() - this.startTime) / 1000);
+                
+                confetti({
+                    particleCount: 100,
+                    spread: 70,
+                    origin: { y: 0.6 }
+                });
+
+                setTimeout(() => {
+                    this.navigateToPage('analysis');
+                }, 2000);
+            }
+
+            generateAnalysis() {
+                setTimeout(() => {
+                    this.generateCharts();
+                    this.generateAIAnalysis();
+                    this.generateTeacherReport();
+                }, 100);
+            }
+
+            generateCharts() {
+                if (this.performanceChart) {
+                    this.performanceChart.destroy();
+                    this.performanceChart = null;
+                }
+                if (this.levelChart) {
+                    this.levelChart.destroy();
+                    this.levelChart = null;
+                }
+
+                const performanceCanvas = document.getElementById('performance-chart');
+                const levelCanvas = document.getElementById('level-chart');
+                
+                if (!performanceCanvas || !levelCanvas) return;
+
+                const performanceCtx = performanceCanvas.getContext('2d');
+                this.performanceChart = new Chart(performanceCtx, {
+                    type: 'doughnut',
+                    data: {
+                        labels: ['Acertos', 'Erros'],
+                        datasets: [{
+                            data: [this.correctAnswers, this.questions.length - this.correctAnswers],
+                            backgroundColor: ['#7db5c5', '#f2a5a5'],
+                            borderWidth: 0
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        plugins: {
+                            legend: {
+                                position: 'bottom'
+                            }
+                        }
+                    }
+                });
+
+                const levelCtx = levelCanvas.getContext('2d');
+                this.levelChart = new Chart(levelCtx, {
+                    type: 'bar',
+                    data: {
+                        labels: ['Fácil', 'Médio', 'Difícil'],
+                        datasets: [{
+                            label: 'Acertos',
+                            data: [this.levelStats.leve, this.levelStats.medio, this.levelStats.dificil],
+                            backgroundColor: ['#7db5c5', '#f5d76e', '#f2a5a5'],
+                            borderRadius: 8
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        plugins: {
+                            legend: {
+                                display: false
+                            }
+                        },
+                        scales: {
+                            y: {
+                                beginAtZero: true,
+                                max: 3
+                            }
+                        }
+                    }
+                });
+            }
+
+            generateAIAnalysis() {
+                const percentage = (this.correctAnswers / this.questions.length) * 100;
+                
+                const aiRecommendation = document.getElementById('ai-recommendation-text');
+                const learningPattern = document.getElementById('learning-pattern');
+                const nextSteps = document.getElementById('next-steps');
+
+                setTimeout(() => {
+                    if (percentage >= 83) {
+                        aiRecommendation.textContent = `Excelente desempenho! Você demonstra forte compreensão da neuroanatomia. Recomendo explorar tópicos mais avançados como neuroplasticidade.`;
+                    } else if (percentage >= 67) {
+                        aiRecommendation.textContent = `Bom desempenho! Revisar flashcards dos lóbulos temporal e parietal pode melhorar ainda mais seus resultados.`;
+                    } else {
+                        aiRecommendation.textContent = `Há espaço para melhoria. Foque nos flashcards básicos dos lóbulos frontais e repita o quiz após mais estudo.`;
+                    }
+                }, 1000);
+
+                setTimeout(() => {
+                    if (this.studyTime < 120) {
+                        learningPattern.textContent = `Você é um aprendiz rápido! Processa informações eficientemente em pouco tempo.`;
+                    } else if (this.studyTime < 300) {
+                        learningPattern.textContent = `Ritmo de aprendizagem equilibrado. Você dedica tempo adequado para absorver o conteúdo.`;
+                    } else {
+                        learningPattern.textContent = `Você aprende de forma reflexiva, dedicando tempo para assimilar bem as informações.`;
+                    }
+                }, 2000);
+
+                setTimeout(() => {
+                    if (this.levelStats.dificil === 0) {
+                        nextSteps.textContent = `Pratique mais questões difíceis. Comece revisando as funções específicas de cada região cerebral.`;
+                    } else if (this.correctAnswers === this.questions.length) {
+                        nextSteps.textContent = `Parabéns! Você pode avançar para tópicos como neurotransmissores e sinapses.`;
+                    } else {
+                        nextSteps.textContent = `Continue praticando com foco nas áreas onde teve mais dificuldade.`;
+                    }
+                }, 3000);
+            }
+
+            generateTeacherReport() {
+                document.getElementById('study-time').textContent = `${this.studyTime} segundos`;
+                document.getElementById('correct-answers').textContent = `${this.correctAnswers}/${this.questions.length}`;
+                
+                const studentLevel = document.getElementById('student-level');
+                const recommendations = document.getElementById('recommendations');
+
+                const percentage = (this.correctAnswers / this.questions.length) * 100;
+
+                if (percentage >= 83) {
+                    studentLevel.textContent = 'Avançado';
+                    studentLevel.style.color = '#7db5c5';
+                } else if (percentage >= 67) {
+                    studentLevel.textContent = 'Intermediário';
+                    studentLevel.style.color = '#f5d76e';
+                } else {
+                    studentLevel.textContent = 'Iniciante';
+                    studentLevel.style.color = '#f2a5a5';
+                }
+
+                const recommendationText = `
+                    <h4>Recomendações Pedagógicas:</h4>
+                    <ul>
+                        <li>Tempo dedicado aos flashcards: ${this.studyTime}s - ${this.studyTime > 180 ? 'Adequado' : 'Rápido demais'}</li>
+                        <li>Acertos em questões fáceis: ${this.levelStats.leve}/2 - ${this.levelStats.leve >= 1 ? 'Satisfatório' : 'Necessita reforço'}</li>
+                        <li>Acertos em questões médias: ${this.levelStats.medio}/2 - ${this.levelStats.medio >= 1 ? 'Bom' : 'Revisar conceitos'}</li>
+                        <li>Acertos em questões difíceis: ${this.levelStats.dificil}/2 - ${this.levelStats.dificil >= 1 ? 'Excelente' : 'Aprofundar estudos'}</li>
+                        <li><strong>Próximo passo:</strong> ${percentage >= 67 ? 'Avançar para módulo seguinte' : 'Repetir atividade com foco nas dificuldades'}</li>
+                    </ul>
+                `;
+
+                recommendations.innerHTML = recommendationText;
+            }
+
+            sendChatMessage() {
+                const input = document.getElementById('chat-input');
+                const message = input.value.trim();
+                
+                if (!message) return;
+                
+                this.addChatMessage(message, 'user');
+                input.value = '';
+                
+                this.showTypingIndicator();
+                
+                setTimeout(() => {
+                    this.hideTypingIndicator();
+                    const response = this.getBotResponse(message);
+                    this.addChatMessage(response, 'bot');
+                }, 1500);
+            }
+
+            addChatMessage(text, sender) {
+                const messagesContainer = document.getElementById('chat-messages');
+                
+                const messageDiv = document.createElement('div');
+                messageDiv.className = `message ${sender}`;
+                
+                const avatar = document.createElement('div');
+                avatar.className = 'message-avatar';
+                avatar.textContent = sender === 'bot' ? '🧠' : '👤';
+                
+                const content = document.createElement('div');
+                content.className = 'message-content';
+                content.textContent = text;
+                
+                messageDiv.appendChild(avatar);
+                messageDiv.appendChild(content);
+                
+                messagesContainer.appendChild(messageDiv);
+                
+                messagesContainer.scrollTop = messagesContainer.scrollHeight;
+            }
+
+            showTypingIndicator() {
+                const messagesContainer = document.getElementById('chat-messages');
+                
+                const typingDiv = document.createElement('div');
+                typingDiv.className = 'message bot';
+                typingDiv.id = 'typing-indicator';
+                
+                const avatar = document.createElement('div');
+                avatar.className = 'message-avatar';
+                avatar.textContent = '🧠';
+                
+                const indicator = document.createElement('div');
+                indicator.className = 'typing-indicator active';
+                indicator.innerHTML = '<div class="typing-dots"><span></span><span></span><span></span></div>';
+                
+                typingDiv.appendChild(avatar);
+                typingDiv.appendChild(indicator);
+                
+                messagesContainer.appendChild(typingDiv);
+                messagesContainer.scrollTop = messagesContainer.scrollHeight;
+            }
+
+            hideTypingIndicator() {
+                const indicator = document.getElementById('typing-indicator');
+                if (indicator) {
+                    indicator.remove();
+                }
+            }
+
+            getBotResponse(userMessage) {
+                const lowerMessage = userMessage.toLowerCase();
+                
+                if (lowerMessage.match(/^(oi|olá|ola|hey|opa|e aí|eai)/)) {
+                    return 'Olá! Como posso ajudar você a aprender sobre o cérebro hoje?';
+                }
+                
+                if (lowerMessage.match(/(obrigad|valeu|thanks)/)) {
+                    return 'Por nada! Fico feliz em ajudar. Tem mais alguma dúvida?';
+                }
+                
+                // Buscar resposta baseada em palavras-chave
+                for (const [topic, data] of Object.entries(this.brainKnowledge)) {
+                    for (const keyword of data.keywords) {
+                        if (lowerMessage.includes(keyword)) {
+                            return data.response;
+                        }
+                    }
+                }
+                
+                const defaultResponses = [
+                    'Hmm, não entendi bem. Você pode perguntar sobre os lobos cerebrais, lesões, ou doenças como Alzheimer, Parkinson, epilepsia e TDAH!',
+                    'Essa é uma boa pergunta! Que tal perguntar sobre as funções de cada lobo ou sobre doenças neurológicas?',
+                    'Não tenho certeza sobre isso. Tente perguntar sobre lobos cerebrais, lesões ou doenças como AVC, autismo ou epilepsia!'
+                ];
+                
+                return defaultResponses[Math.floor(Math.random() * defaultResponses.length)];
+            }
+
+            resetQuiz() {
+                if (!confirm('Tem certeza que deseja reiniciar? Todos os dados do quiz serão apagados.')) {
+                    return;
+                }
+
+                this.currentQuestionIndex = 0;
+                this.correctAnswers = 0;
+                this.studyTime = 0;
+                this.levelStats = { leve: 0, medio: 0, dificil: 0 };
+                this.startTime = Date.now();
+
+                if (this.performanceChart) {
+                    this.performanceChart.destroy();
+                    this.performanceChart = null;
+                }
+                if (this.levelChart) {
+                    this.levelChart.destroy();
+                    this.levelChart = null;
+                }
+
+                const aiRecommendation = document.getElementById('ai-recommendation-text');
+                const learningPattern = document.getElementById('learning-pattern');
+                const nextSteps = document.getElementById('next-steps');
+                
+                if (aiRecommendation) aiRecommendation.textContent = 'Complete o quiz para ver a análise...';
+                if (learningPattern) learningPattern.textContent = 'Complete o quiz para ver seu padrão...';
+                if (nextSteps) nextSteps.textContent = 'Complete o quiz para ver os próximos passos...';
+
+                const studyTimeElem = document.getElementById('study-time');
+                const correctAnswersElem = document.getElementById('correct-answers');
+                const studentLevel = document.getElementById('student-level');
+                const recommendations = document.getElementById('recommendations');
+                
+                if (studyTimeElem) studyTimeElem.textContent = '0 segundos';
+                if (correctAnswersElem) correctAnswersElem.textContent = '0/6';
+                if (studentLevel) {
+                    studentLevel.textContent = 'Avaliando...';
+                    studentLevel.style.color = '#666';
+                }
+                if (recommendations) recommendations.innerHTML = '<p style="color: #999; font-style: italic;">Complete o quiz para ver as recomendações.</p>';
+
+                if (typeof confetti !== 'undefined') {
+                    confetti({
+                        particleCount: 50,
+                        spread: 60,
+                        origin: { y: 0.6 },
+                        colors: ['#7db5c5', '#f5d76e', '#f2a5a5', '#a8d5c1', '#c4a8d1']
+                    });
+                }
+
+                setTimeout(() => {
+                    this.navigateToPage('home');
+                    alert('✅ Quiz reiniciado com sucesso!\n\nVocê pode começar novamente. Boa sorte!');
+                }, 500);
+            }
+        }
+
+        document.addEventListener('DOMContentLoaded', () => {
+            const app = new LYFApp();
+        });
+    </script>
+</body>
+</html>
